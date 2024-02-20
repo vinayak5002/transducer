@@ -32,17 +32,9 @@ class AudioDataset(Dataset):
 
     waveform, sample_rate = librosa.load('Data/clips/' + audio_file, sr=self.sample_rate)
 
-    # Compute MFCC features
     mfccs = librosa.feature.mfcc(y=waveform, sr=sample_rate, n_mfcc=128)
     mfccs = np.mean(mfccs.T, axis=0)  # Take the mean along the time axis
 
-    # # Pad or truncate MFCC features to a fixed length
-    # if len(mfccs) < self.max_length:
-    #     mfccs = np.pad(mfccs, (0, self.max_length - len(mfccs)))
-    # else:
-    #     mfccs = mfccs[:self.max_length]
-
-    # Convert MFCCs to PyTorch tensor
     mfccs = torch.tensor(mfccs, dtype=torch.float32)
     
     encoded_transcript = encode_string(transcript)
@@ -53,12 +45,9 @@ class AudioDataset(Dataset):
     """
     Collate function for DataLoader.
     """
-    # Separate inputs, transcripts, and accents
     mfccs_batch, transcript_batch, accent_batch = zip(*batch)
-    # Stack MFCCs into a batch tensor
     mfccs_batch = torch.stack(mfccs_batch)
     
-    # Pad transcripts and accents
     transcript_batch = pad_sequence(transcript_batch, batch_first=True)
     
     return mfccs_batch, transcript_batch, accent_batch
