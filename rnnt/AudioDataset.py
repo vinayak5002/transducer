@@ -1,15 +1,9 @@
 import torch
 import string
-from torch.utils.data import Dataset
 import pandas as pd
 import librosa
-from torch.nn.utils.rnn import pad_sequence
 import numpy as np
-
-import torch
 from torch.utils.data import Dataset, DataLoader
-import librosa
-import numpy as np
 
 class AudioDataset(Dataset):
   def __init__(self, audio_files, transcripts, accent, sample_rate=16000, max_length=128, batch_size=32):
@@ -37,20 +31,32 @@ class AudioDataset(Dataset):
 
     mfccs = torch.tensor(mfccs, dtype=torch.float32)
     
-    encoded_transcript = encode_string(transcript)
 
-    return mfccs, encoded_transcript, accent
+    return mfccs, transcript
 
   def collate(self, batch):
     """
     Collate function for DataLoader.
     """
-    mfccs_batch, transcript_batch, accent_batch = zip(*batch)
+    batch_size = len(batch)
+    mfccs_batch, transcript_batch = zip(*batch)
+    
+    T = [len(x) for x in mfccs_batch]
+    U = [len(y) for y in transcript_batch]
+    
+    U_max = max(U)
+    y = []
+    for i in range(batch_size):
+      enc_trans = encode_string(transcript_batch[i])
+      enc_trans += [0] * (U_max - len(enc_trans))
+      y.append(torch.tensor(enc_trans))  
+    
     mfccs_batch = torch.stack(mfccs_batch)
+    y = torch.stack(y)
+    T = torch.tensor(T)
+    U = torch.tensor(U)
     
-    transcript_batch = pad_sequence(transcript_batch, batch_first=True)
-    
-    return mfccs_batch, transcript_batch, accent_batch
+    return mfccs_batch, transcript_batch, T, U
 
 
 def encode_string(s):
