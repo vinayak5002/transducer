@@ -30,34 +30,31 @@ class AudioDataset(Dataset):
     mfccs = np.mean(mfccs.T, axis=0)  # Take the mean along the time axis
 
     mfccs = torch.tensor(mfccs, dtype=torch.float32)
-    
 
     return mfccs, transcript
 
   def collate(self, batch):
-    """
-    Collate function for DataLoader.
-    """
-    batch_size = len(batch)
-    mfccs_batch, transcript_batch = zip(*batch)
-    
-    T = [len(x) for x in mfccs_batch]
-    U = [len(y) for y in transcript_batch]
-    
-    U_max = max(U)
-    y = []
-    for i in range(batch_size):
-      enc_trans = encode_string(transcript_batch[i])
-      enc_trans += [0] * (U_max - len(enc_trans))
-      y.append(torch.tensor(enc_trans))  
-    
-    mfccs_batch = torch.stack(mfccs_batch)
-    y = torch.stack(y)
-    T = torch.tensor(T)
-    U = torch.tensor(U)
-    
-    return mfccs_batch, transcript_batch, T, U
-
+      batch_size = len(batch)
+      mfccs_batch, transcript_batch = zip(*batch)
+      
+      T = [len(x) for x in mfccs_batch]
+      U = [len(y) for y in transcript_batch]
+      
+      U_max = max(U)
+      y = []
+      for i in range(batch_size):
+          enc_trans = encode_string(transcript_batch[i])
+          enc_trans += [0] * (U_max - len(enc_trans))
+          y.append(torch.tensor(enc_trans))  
+      
+      mfccs_batch = torch.stack(mfccs_batch)
+      y = torch.stack(y)
+      T = torch.tensor(T)
+      U = torch.tensor(U)
+      
+      mfccs_batch = mfccs_batch.long()
+      
+      return mfccs_batch, y, T, U
 
 def encode_string(s):
   for c in s:
@@ -68,7 +65,7 @@ def encode_string(s):
 def decode_labels(l):
   return "".join([string.printable[c - 1] for c in l])
 
-df = pd.read_csv('Data/validated_top10.csv', index_col=False)
+df = pd.read_csv('Data/validated_top10_cleaned.csv', index_col=False)
 df.head()
 end = round(0.9 * df.shape[0])
 train = df[:end]

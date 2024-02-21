@@ -163,8 +163,8 @@ class Trainer:
     pbar = tqdm(dataset.loader)
     for idx, batch in enumerate(pbar):
       x,y,T,U = batch
-      # x, 
-      x = x.to(self.model.device); y = y.to(self.model.device)
+      x = x[0].to(self.model.device)
+      y = y[0].to(self.model.device)
       batch_size = len(x)
       num_samples += batch_size
       loss = self.model.compute_loss(x,y,T,U)
